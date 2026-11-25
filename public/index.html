@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Archive — Library Book Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <!-- Top Header -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">■</span>
+        <div>
+          <p class="eyebrow">SET A · REST API CONSOLE</p>
+          <h1>Library Archive</h1>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <span class="api-pill" id="apiStatus">
+          <span class="dot"></span>
+          <span>API · :3000</span>
+        </span>
+        <button type="button" class="btn btn-primary" id="openAddBtn">
+          + Add Book
+        </button>
+      </div>
+    </header>
+
+    <!-- Summary Metrics -->
+    <section class="metrics-grid" aria-label="Catalog summary">
+      <div class="metric-card">
+        <span class="metric-label">Total Titles</span>
+        <strong class="metric-value" id="statTotal">0</strong>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Available</span>
+        <strong class="metric-value" id="statAvailable">0</strong>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Checked Out</span>
+        <strong class="metric-value" id="statUnavailable">0</strong>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Last Status</span>
+        <strong class="metric-value mono" id="statHttp">—</strong>
+      </div>
+    </section>
+
+    <!-- Filter & Lookup Toolbar -->
+    <section class="toolbar" aria-label="Filter and lookup">
+      <form class="search-group" id="filterForm">
+        <label class="sr-only" for="authorFilter">Filter by author</label>
+        <input
+          type="text"
+          id="authorFilter"
+          placeholder="Filter by author (e.g. Paulo Coelho)…"
+          autocomplete="off"
+        />
+        <button type="submit" class="btn btn-secondary">Filter</button>
+        <button type="button" class="btn btn-ghost" id="resetFilterBtn" hidden>Reset</button>
+      </form>
+
+      <form class="lookup-group" id="idLookupForm">
+        <label class="sr-only" for="idLookup">Lookup by ID</label>
+        <input
+          type="number"
+          id="idLookup"
+          min="1"
+          placeholder="ID (e.g. 101)"
+          autocomplete="off"
+        />
+        <button type="submit" class="btn btn-secondary">Find ID</button>
+      </form>
+    </section>
+
+    <!-- Active Filter / Feedback Banner -->
+    <div class="status-banner" id="statusBanner" hidden>
+      <span id="statusBannerText"></span>
+      <button type="button" class="btn-link" id="clearBannerBtn">Show all books</button>
+    </div>
+
+    <!-- Main Catalog Table -->
+    <main class="catalog-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Author</th>
+              <th>Genre</th>
+              <th>Year</th>
+              <th>Status</th>
+              <th class="align-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="booksTableBody">
+            <tr>
+              <td colspan="7" class="empty-cell">Loading catalog…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <!-- Live API Response Inspector -->
+    <section class="inspector-card" aria-label="Last API response">
+      <div class="inspector-header">
+        <div class="inspector-title">
+          <span class="mono badge" id="inspectorMethod">GET</span>
+          <span class="mono" id="inspectorEndpoint">/api/books</span>
+        </div>
+        <span class="mono inspector-code" id="inspectorStatus">200 OK</span>
+      </div>
+      <pre class="inspector-body" id="inspectorBody">[]</pre>
+    </section>
+  </div>
+
+  <!-- Add / Edit Book Modal -->
+  <div class="modal-backdrop" id="bookModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h2 id="modalTitle">Add New Book</h2>
+        <button type="button" class="icon-btn" id="closeModalBtn" aria-label="Close modal">✕</button>
+      </div>
+      <form id="bookForm" novalidate>
+        <input type="hidden" id="bookId" />
+        <div class="form-grid">
+          <div class="field full">
+            <label for="titleInput">Title</label>
+            <input type="text" id="titleInput" placeholder="e.g. The Discovery of India" required />
+          </div>
+          <div class="field full">
+            <label for="authorInput">Author</label>
+            <input type="text" id="authorInput" placeholder="e.g. Jawaharlal Nehru" required />
+          </div>
+          <div class="field">
+            <label for="genreInput">Genre</label>
+            <input type="text" id="genreInput" placeholder="e.g. History" required />
+          </div>
+          <div class="field">
+            <label for="yearInput">Published Year</label>
+            <input type="number" id="yearInput" placeholder="e.g. 1946" min="0" required />
+          </div>
+          <div class="field full checkbox-field">
+            <label class="toggle-label" for="availableInput">
+              <input type="checkbox" id="availableInput" checked />
+              <span>Available for checkout</span>
+            </label>
+          </div>
+        </div>
+
+        <p class="form-error" id="formError" hidden></p>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="cancelModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveBookBtn">Save Book</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
